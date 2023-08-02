@@ -12,17 +12,18 @@ class MappingService implements MappingServiceInterface
     public function generateMapping(): array
     {
         // Logic to analyze the CSV file structure and dynamically generate mapping
+        // Or simply get array from somewhere
 
         return [
-            Report::MERCHANT_ID => 'mid',
-            Report::MERCHANT_NAME => 'dba',
-            Report::BATCH_DATE => 'batch_date',
-            Report::BATCH_REF_NUM => 'batch_ref_num',
-            Report::TRANSACTION_DATE => 'trans_date',
-            Report::TRANSACTION_TYPE => 'trans_type',
-            Report::TRANSACTION_CARD_TYPE => 'trans_card_type',
-            Report::TRANSACTION_CARD_NUMBER => 'trans_card_num',
-            Report::TRANSACTION_AMOUNT => 'trans_amount',
+            Report::MERCHANT_ID => Report::MERCHANT_ID,
+            Report::MERCHANT_NAME => Report::MERCHANT_NAME,
+            Report::BATCH_DATE => Report::BATCH_DATE,
+            Report::BATCH_REF_NUM => Report::BATCH_REF_NUM,
+            Report::TRANSACTION_DATE => Report::TRANSACTION_DATE,
+            Report::TRANSACTION_TYPE => Report::TRANSACTION_TYPE,
+            Report::TRANSACTION_CARD_TYPE => Report::TRANSACTION_CARD_TYPE,
+            Report::TRANSACTION_CARD_NUMBER => Report::TRANSACTION_CARD_NUMBER,
+            Report::TRANSACTION_AMOUNT => Report::TRANSACTION_AMOUNT,
         ];
     }
 }
