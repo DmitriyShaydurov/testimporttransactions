@@ -3,9 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Services\Importer\Report;
-use Faker\Factory as Faker;
-use League\Csv\Writer;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CsvGeneratorController extends Controller
 {
