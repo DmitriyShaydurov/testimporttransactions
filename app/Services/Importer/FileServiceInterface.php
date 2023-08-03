@@ -4,5 +4,5 @@ namespace App\Services\Importer;
 
 interface FileServiceInterface
 {
-    public function load(): string;
+    public function getCorrectPath(): string;
 }

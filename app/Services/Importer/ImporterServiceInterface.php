@@ -17,8 +17,4 @@ interface ImporterServiceInterface
      * @return Result Result of the import process
      */
     public function process(string $filename, array $mapping): Result;
-
-    public function getFileService(): FileServiceInterface;
-
-    public function getMappingService(): MappingServiceInterface;
 }

@@ -6,25 +6,26 @@ use App\Models\Merchant;
 use App\Models\Batch;
 use App\Models\Transaction;
 use Illuminate\Support\Facades\DB;
-use League\Csv\Reader;
 
 class ImporterService implements ImporterServiceInterface
 {
-    private $batchSize = 1000;  // размер буфера
-
+    private $batchSize;
     protected $fileService;
-    protected $mappingService;
+    protected $csvReader;
+    protected $dataInserter;
+    protected $dataProcessor;
 
-    public function __construct(FileServiceInterface $fileService, MappingServiceInterface $mappingService)
+    public function __construct(CSVReaderInterface $csvReader, DataInserterInterface $dataInserter, DataProcessorInterface $dataProcessor)
     {
-        $this->fileService = $fileService;
-        $this->mappingService = $mappingService;
+        $this->csvReader = $csvReader;
+        $this->dataInserter = $dataInserter;
+        $this->dataProcessor = $dataProcessor;
+        $this->batchSize = config('csvImporter.size');
     }
 
     public function process(string $filename, array $mapping): Result
     {
-        $csv = Reader::createFromPath($filename, 'r');
-        $csv->setHeaderOffset(0); //set the CSV header offset
+        $csv = $this->csvReader->read($filename);
         $result = new Result();
 
         $merchants = [];
@@ -33,39 +34,15 @@ class ImporterService implements ImporterServiceInterface
 
         DB::transaction(function () use ($csv, $mapping, $result, &$merchants, &$batches, &$transactions) {
             foreach ($csv as $index => $record) {
-                // Prepare merchant data
-                $merchantData = [
-                    'id' => $record[$mapping[Report::MERCHANT_ID]],
-                    'name' => $record[$mapping[Report::MERCHANT_NAME]],
-                ];
-                $merchants[$merchantData['id']] = $merchantData;
-                $result->incrementMerchantCount();
 
-                // Prepare batch data
-                $batchData = [
-                    'merchant_id' => $record[$mapping[Report::MERCHANT_ID]],
-                    'batch_date' => $record[$mapping[Report::BATCH_DATE]],
-                    'batch_ref_num' => $record[$mapping[Report::BATCH_REF_NUM]],
-                ];
-                $batchKey = implode('-', $batchData);
-                $batches[$batchKey] = $batchData;
-                $result->incrementBatchCount();
+                // Despite the lack of cleanliness, we are attempting to conserve memory here.
+                $this->dataProcessor->processRecord($record, $mapping, $merchants, $batches, $transactions);
 
-                // Prepare transaction data
-                $transactionData = [
-                    'batch_id' => $batchKey,
-                    'transaction_date' => $record[$mapping[Report::TRANSACTION_DATE]],
-                    'transaction_type' => $record[$mapping[Report::TRANSACTION_TYPE]],
-                    'transaction_card_type' => $record[$mapping[Report::TRANSACTION_CARD_TYPE]],
-                    'transaction_card_number' => $record[$mapping[Report::TRANSACTION_CARD_NUMBER]],
-                    'transaction_amount' => $record[$mapping[Report::TRANSACTION_AMOUNT]],
-                ];
-                $transactions[] = $transactionData;
                 $result->incrementTransactionCount();
 
                 // If buffer is full, insert data and clean buffers
                 if (($index + 1) % $this->batchSize == 0) {
-                    $this->insertData($merchants, $batches, $transactions);
+                    $this->dataInserter->insertData($merchants, $batches, $transactions);
                     $merchants = [];
                     $batches = [];
                     $transactions = [];
@@ -73,40 +50,11 @@ class ImporterService implements ImporterServiceInterface
             }
             // Insert remaining data
             if ($merchants || $batches || $transactions) {
-                $this->insertData($merchants, $batches, $transactions);
+                $this->dataInserter->insertData($merchants, $batches, $transactions);
             }
         });
 
         return $result;
     }
 
-    private function insertData(array $merchants, array $batches, array $transactions)
-    {
-        // Insert merchants
-        Merchant::upsert(array_values($merchants), ['id'], ['name']);
-
-        // Insert batches with getting their actual IDs
-        foreach ($batches as $batchKey => &$batchData) {
-            $batch = Batch::updateOrCreate($batchData);
-            $batchData['id'] = $batch->id;
-        }
-
-        // Replace batch keys in transactions with actual IDs
-        foreach ($transactions as &$transactionData) {
-            $transactionData['batch_id'] = $batches[$transactionData['batch_id']]['id'];
-        }
-
-        // Insert transactions
-        Transaction::insert($transactions);
-    }
-
-    public function getFileService(): FileServiceInterface
-    {
-        return $this->fileService;
-    }
-
-    public function getMappingService(): MappingServiceInterface
-    {
-        return $this->mappingService;
-    }
 }

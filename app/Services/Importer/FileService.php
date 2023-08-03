@@ -4,11 +4,6 @@ namespace App\Services\Importer;
 
 use Exception;
 
-interface FileServiceInterface
-{
-    public function load(): string;
-}
-
 class FileService implements FileServiceInterface
 {
     protected $path;
@@ -19,12 +14,11 @@ class FileService implements FileServiceInterface
     }
 
     /**
-     * Load the file from the given path
      *
      * @return string
      * @throws Exception
      */
-    public function load(): string
+    public function getCorrectPath(): string
     {
         if (!file_exists($this->path)) {
             throw new Exception('File not found or is not valid');
