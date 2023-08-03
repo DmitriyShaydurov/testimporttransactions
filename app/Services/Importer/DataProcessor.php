@@ -13,7 +13,7 @@ class DataProcessor implements DataProcessorInterface
      * @param array $batches The current batches data
      * @param array $transactions The current transactions data
      */
-    public function processRecord(array $record, array $mapping, &$merchants, &$batches, &$transactions)
+    public function processRecord(array $record, array $mapping, &$merchants, &$batches, &$transactions): void
     {
         // Prepare merchant data
         $merchantData = [

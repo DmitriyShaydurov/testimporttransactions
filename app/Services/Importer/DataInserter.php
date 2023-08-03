@@ -15,7 +15,7 @@ class DataInserter implements DataInserterInterface
      * @param array $batches The batches data
      * @param array $transactions The transactions data
      */
-    public function insertData(array $merchants, array $batches, array $transactions)
+    public function insertData(array $merchants, array $batches, array $transactions): void
     {
         // Insert merchants
         Merchant::upsert(array_values($merchants), ['id'], ['name']);
